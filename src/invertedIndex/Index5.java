@@ -162,7 +162,51 @@ public class Index5 {
         return flen;
     }
 
+    public String BuildPositional(String[] files , String phrase){
+        StringBuilder result = new StringBuilder("Docs : [");
+        String [] PhraseArr = phrase.split("\\W+");
+        int PhrasArrCounter = 0;
+        int fid = 0;
+        for (String fileName : files) {       // for each file in the collection
+            try (BufferedReader file = new BufferedReader(new FileReader(fileName))) {
+                String ln;
+                while ((ln = file.readLine()) != null) {    // read the file line by line
+                    String[] words = ln.split("\\W+");
 
+                    for (String word : words) {
+                        word = word.toLowerCase();
+                        if (stopWord(word)) {
+                            continue;
+                        }
+                        word = stemWord(word);
+                        if(word.equals(PhraseArr[PhrasArrCounter])){
+                            PhrasArrCounter++;
+                        }
+                        else{
+                            PhrasArrCounter = 0;
+                        }
+
+                        if(PhrasArrCounter == PhraseArr.length-1){
+                            result.append(fid).append(" ");
+                            PhrasArrCounter = 0;
+                        }
+
+                    }
+
+                    if(PhrasArrCounter == PhraseArr.length-1){
+                        result.append(fid).append(',');
+                        PhrasArrCounter = 0;
+                    }
+                }
+            } catch (IOException e) {   // if the file is not found
+                System.out.println("File " + fileName + " not found. Skip it");
+            }
+            fid++;
+        }
+        result = new StringBuilder(result.substring(0, result.length() - 1));
+        result.append(']');
+        return result.toString();
+    }
     //---------------------------------------------------------------------------
     public int indexOneLineBiWord(String ln, int fid) {       // check the line for stop words and stem the words
         int flen = 0;
@@ -214,47 +258,6 @@ public class Index5 {
         }
         return flen;
     }
-//----------------------------------------------------------------------------
-public int indexOneLinePositionalIndex(String ln, int fid) {       // check the line for stop words and stem the words
-    int flen = 0;
-
-    String[] words = ln.split("\\W+");
-    //   String[] words = ln.replaceAll("(?:[^a-zA-Z0-9 -]|(?<=\\w)-(?!\\S))", " ").toLowerCase().split("\\s+");
-    flen += words.length;
-    for (String word : words) {
-        word = word.toLowerCase();
-        if (stopWord(word)) {
-            continue;
-        }
-        word = stemWord(word);
-        // check to see if the word is not in the dictionary
-        // if not add it
-        if (!index.containsKey(word)) {
-            index.put(word, new DictEntry());
-        }
-        // add document id to the posting list
-        if (!index.get(word).postingListContains(fid)) {    // if the word is not in the posting list
-            index.get(word).doc_freq += 1; //set doc freq to the number of doc that contain the term
-            if (index.get(word).pList == null) {
-                index.get(word).pList = new Posting(fid);
-                index.get(word).last = index.get(word).pList;
-            } else {
-                index.get(word).last.next = new Posting(fid);
-                index.get(word).last = index.get(word).last.next;
-            }
-        } else {
-            index.get(word).last.dtf += 1;
-        }
-        //set the term_fteq in the collection
-        index.get(word).term_freq += 1;
-        if (word.equalsIgnoreCase("lattice")) {
-
-            System.out.println("  <<" + index.get(word).getPosting(1) + ">> " + ln);
-        }
-
-    }
-    return flen;
-}
 //----------------------------------------------------------------------------
 
 
@@ -344,7 +347,27 @@ public int indexOneLinePositionalIndex(String ln, int fid) {       // check the 
         //fix this if word is not in the hash table will crash...
         return result;
     }
+    public String Bounsfind_24_01(String phrase , Posting NewPosting) { // any mumber of terms non-optimized search
+        String result = "";
 
+        try {
+            Posting posting = index.get(phrase.toLowerCase()).pList;
+
+            posting = intersect(posting, NewPosting);  // intersect the posting lists
+
+            while (posting != null) {
+                //System.out.println("\t" + sources.get(num));
+                result += "\t" + posting.docId + " - " + sources.get(posting.docId).title + " - " + sources.get(posting.docId).length + "\n";
+                posting = posting.next;
+            }
+        } catch (Exception e) { // if the word is not in the dictionary
+            System.out.println("There is no such word in the collection " + phrase);
+            result = "";
+        }
+
+        //fix this if word is not in the hash table will crash...
+        return result;
+    }
     public String find_position(String phrase) { // any mumber of terms non-optimized search
         String result = "";
         String[] words = phrase.split("\\W+");

@@ -14,6 +14,8 @@ import java.util.Scanner;
 
 import invertedIndex.Index5;
 
+import javax.xml.transform.Result;
+
 /**
  *
  * @author ehab
@@ -25,7 +27,9 @@ public class Test {
         //|**  change it to your collection directory
         //|**  in windows "C:\\tmp11\\rl\\collection\\"
 
-        String files = "D:/tmp11/tmp11/rl/collection/";
+        //C:\Users\aseme\Desktop\tmp11
+        //C:\Users\aseme\Desktop\tmp11\tmp11\rl\collection
+        String files = "C:/Users/aseme/Desktop/tmp11/tmp11/rl/collection/";
 
 
         File file = new File(files);
@@ -45,18 +49,26 @@ public class Test {
 
 
         if (choice.contains("\"")){
+            choice = choice.replace(' ','_');
             if (choice.charAt(0) == ('\"')){
                 index.buildIndexBiword(fileList);
             }else {
                 Index5 indexnono = new Index5();
                 index.buildIndex(fileList);
                 indexnono.buildIndexBiword(fileList);
-
-                for (int i = 0; i < index.index.size(); i++) {
-//                    index.index.get(words[i].toLowerCase()).pList;
+                String ByWordKey = choice.substring(choice.indexOf('"')+1,choice.length()-1).toLowerCase();
+                String InvertedIndexKey = choice.substring(0,choice.indexOf('"')).toLowerCase();
+                System.out.println(ByWordKey);
+                System.out.println(InvertedIndexKey);
+                try {
+                    Posting posting = indexnono.index.get(ByWordKey).pList;
+                    String res = index.Bounsfind_24_01(InvertedIndexKey,posting);
+                    System.out.println(res + " From Res");
+                }
+                catch (Exception e){
+                    System.out.println("There is no " + ByWordKey + " in the collection");
                 }
 
-//                index.intersect()
             }
         }else {
             System.out.println("Which index type u want to use:\n 1- inverted index\n 2- Positional index ");
@@ -66,7 +78,8 @@ public class Test {
             if (chos == 1){                 // the defult inverted index
                 index.buildIndex(fileList);
             } else if (chos == 2) {
-
+                String result = index.BuildPositional(fileList,choice.toLowerCase());
+                System.out.println(result);
             }
         }
 
